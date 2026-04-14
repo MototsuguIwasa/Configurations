@@ -1,21 +1,8 @@
 ;;; init.el --- My init.el  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2020  Naoya Yamashita
+;; Copyright (C) 2025  Mototsugu Iwasa
 
-;; Author: Naoya Yamashita <conao3@gmail.com>
-
-;; This program is free software: you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
-
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-
-;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; Author: Mototsugu iwasa
 
 ;;; Commentary:
 
@@ -53,9 +40,9 @@
     (redraw-frame))
 
   :bind (("M-ESC ESC" . c/redraw-frame))
-  :custom '((user-full-name . "Naoya Yamashita")
-            (user-mail-address . "conao3@gmail.com")
-            (user-login-name . "conao3")
+  :custom '((user-full-name . "Mototsugu Iwasa")
+            (user-mail-address . "mototsugu.iwasa@gmail.comm")
+            (user-login-name . "mototsugu")
             (create-lockfiles . nil)
             (tab-width . 4)
             (debug-on-error . t)
@@ -298,6 +285,25 @@
   (doom-modeline-buffer-file-name-style . 'truncate-with-project)
   (doom-modeline-icon . t)      ; アイコンを表示
   (doom-modeline-major-mode-icon . t))
+
+(leaf magit
+  :doc "A Git porcelain for Emacs"
+  :tag "git" "tools"
+  :ensure t
+  :bind (("C-x g" . magit-status)
+         ("C-x M-g" . magit-dispatch)
+         ("C-c L" . magit-log-buffer-file))
+  :custom
+  ;; ステータスバッファをフルスクリーン（または現在のウィンドウ全体）で開く設定
+  ;; 今の設定スタイルに合わせてお好みで
+  (magit-display-buffer-function . 'magit-display-buffer-fullcolumn-most-v1))
+
+(leaf transient
+  :doc "Transient commands (Magit depends on this)"
+  :ensure t
+  :custom `((transient-history-file . ,(locate-user-emacs-file "transient/history.el"))
+            (transient-levels-file  . ,(locate-user-emacs-file "transient/levels.el"))
+            (transient-values-file  . ,(locate-user-emacs-file "transient/values.el"))))
 
 (provide 'init)
 
