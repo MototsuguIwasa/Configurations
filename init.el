@@ -222,16 +222,36 @@
   :config
   (add-to-list 'completion-at-point-functions #'cape-file))
 
-(leaf eglot
-  :doc "The Emacs Client for LSP servers"
-  :hook ((clojure-mode-hook . eglot-ensure))
-  :custom ((eldoc-echo-area-use-multiline-p . nil)
-           (eglot-connect-timeout . 600)))
+;; Haskell 基本モード
+(leaf haskell-mode
+  :ensure t
+  :mode "\\.hs\\'")
 
-(leaf eglot-booster
-  :when (executable-find "emacs-lsp-booster")
-  :vc ( :url "https://github.com/jdtsmith/eglot-booster")
-  :global-minor-mode t)
+;; LSP クライアント本体
+(leaf lsp-mode
+  :ensure t
+  :hook (haskell-mode-hook . lsp-deferred)
+  :custom ((lsp-keep-workspace-alive . nil)
+           (lsp-signature-auto-activate . t))
+  :bind (:lsp-mode-map
+         ("C-c r" . lsp-rename)
+         ("C-c a" . lsp-execute-code-action))
+  :config
+  ;; 必要に応じて lsp-ui などの設定をここに追加
+  )
+
+;; HLS との連携用ブリッジ
+(leaf lsp-haskell
+  :ensure t
+  :after haskell-mode lsp-mode)
+
+;; (任意) LSP の UI をリッチにする
+(leaf lsp-ui
+  :ensure t
+  :after lsp-mode
+  :hook (lsp-mode-hook . lsp-ui-mode)
+  :custom ((lsp-ui-doc-enable . t)
+           (lsp-ui-peek-enable . t)))
 
 (leaf puni
   :doc "Parentheses Universalistic"
