@@ -1,13 +1,8 @@
 ;;; init.el --- My init.el  -*- lexical-binding: t; -*-
-
 ;; Copyright (C) 2025  Mototsugu Iwasa
-
 ;; Author: Mototsugu iwasa
-
 ;;; Commentary:
-
 ;; My init.el.
-
 ;;; Code:
 
 (eval-and-compile
@@ -41,7 +36,7 @@
 
   :bind (("M-ESC ESC" . c/redraw-frame))
   :custom '((user-full-name . "Mototsugu Iwasa")
-            (user-mail-address . "mototsugu.iwasa@gmail.comm")
+            (user-mail-address . "mototsugu.iwasa@gmail.com")
             (user-login-name . "mototsugu")
             (create-lockfiles . nil)
             (tab-width . 4)
@@ -114,7 +109,7 @@
   :doc "Get environment variables such as $PATH from the shell"
   :ensure t
   :defun (exec-path-from-shell-initialize)
-  :custom ((exec-path-from-shell-check-startup-files)
+  :custom ((exec-path-from-shell-check-startup-files . t)
            (exec-path-from-shell-variables . '("PATH" "GOPATH" "JAVA_HOME")))
   :config
   (exec-path-from-shell-initialize))
