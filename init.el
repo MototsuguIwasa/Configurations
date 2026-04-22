@@ -105,12 +105,6 @@
   :custom `((savehist-file . ,(locate-user-emacs-file "savehist")))
   :global-minor-mode t)
 
-(leaf flymake
-  :doc "A universal on-the-fly syntax checker"
-  :bind ((prog-mode-map
-          ("M-n" . flymake-goto-next-error)
-          ("M-p" . flymake-goto-prev-error))))
-
 (leaf which-key
   :doc "Display available keybindings in popup"
   :ensure t
@@ -226,6 +220,22 @@
 (leaf haskell-mode
   :ensure t
   :mode "\\.hs\\'")
+
+;; 2. Haskell 用の Flycheck 拡張設定
+(leaf flycheck-haskell
+  :doc "Improved Haskell support for Flycheck"
+  :ensure t
+  :after (flycheck haskell-mode)
+  :hook (haskell-mode-hook . flycheck-haskell-setup))
+
+;; 3. Flycheck 本体の設定（前回の設定に追加）
+(leaf flycheck
+  :ensure t
+  :global-minor-mode global-flycheck-mode
+  :config
+  ;; GHC でのチェック後に hlint を実行するようにチェッカーを繋げる設定
+  (with-eval-after-load 'flycheck
+    (flycheck-add-next-checker 'haskell-ghc 'haskell-hlint)))
 
 ;; LSP クライアント本体
 (leaf lsp-mode
