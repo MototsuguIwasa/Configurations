@@ -228,7 +228,9 @@
   :ensure t
   :global-minor-mode global-flycheck-mode
   :config
-  ;; GHC でのチェック後に hlint を実行するようにチェッカーを繋げる設定
+  ;; LSPにFlycheckを使わせる設定（lsp-modeの設定内でも可）
+  (setq lsp-diagnostics-provider :flycheck)
+  ;; チェッカーの優先順位設定
   (with-eval-after-load 'flycheck
     (flycheck-add-next-checker 'haskell-ghc 'haskell-hlint)))
 
