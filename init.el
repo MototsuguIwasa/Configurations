@@ -226,10 +226,9 @@
 ;; 3. Flycheck 本体の設定（前回の設定に追加）
 (leaf flycheck
   :ensure t
+  :defun flycheck-add-next-checker
   :global-minor-mode global-flycheck-mode
   :config
-  ;; LSPにFlycheckを使わせる設定（lsp-modeの設定内でも可）
-  (setq lsp-diagnostics-provider :flycheck)
   ;; チェッカーの優先順位設定
   (with-eval-after-load 'flycheck
     (flycheck-add-next-checker 'haskell-ghc 'haskell-hlint)))
@@ -239,7 +238,8 @@
   :ensure t
   :hook (haskell-mode-hook . lsp-deferred)
   :custom ((lsp-keep-workspace-alive . nil)
-           (lsp-signature-auto-activate . t))
+           (lsp-signature-auto-activate . t)
+           (lsp-diagnostics-provider . :flycheck))
   :bind (:lsp-mode-map
          ("C-c r" . lsp-rename)
          ("C-c a" . lsp-execute-code-action))
