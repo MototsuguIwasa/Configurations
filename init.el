@@ -3,6 +3,9 @@
 ;; Author: Mototsugu iwasa
 ;;; Commentary:
 ;; My init.el.
+;; 注意事項
+;; ※ 事前にターミナルで `pip install pyright` が必要です
+;; ※ 事前にターミナルで `pip install ruff` が必要です
 ;;; Code:
 
 (eval-and-compile
@@ -259,6 +262,43 @@
   :hook (lsp-mode-hook . lsp-ui-mode)
   :custom ((lsp-ui-doc-enable . t)
            (lsp-ui-peek-enable . t)))
+
+
+;; Python 基本設定
+(leaf python
+  :doc "Python editing mode"
+  :tag "builtin" "languages"
+  :mode ("\\.py\\'" . python-mode)
+  :hook (python-mode-hook . lsp-deferred)
+  :custom ((python-indent-offset . 4)))
+
+;; LSP Pyright (静的解析サーバ)
+;; ※ 事前にターミナルで `pip install pyright` が必要です
+(leaf lsp-pyright
+  :doc "LSP client for Python using Pyright"
+  :ensure t
+  :after lsp-mode python
+  :custom ((lsp-pyright-multi-root . t))
+  :hook (python-mode-hook . (lambda ()
+                              (require 'lsp-pyright)
+                              (lsp-deferred))))
+
+;; Ruff (高速フォーマッタ/リンター)
+;; ※ 事前にターミナルで `pip install ruff` が必要です
+(leaf ruff-format
+  :doc "Use ruff to format python code"
+  :ensure t
+  :after python
+  :hook (python-mode-hook . ruff-format-on-save-mode))
+
+;; Python 用の補完強化 (Cape)
+(leaf cape-python
+  :after (cape python)
+  :config
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev))
+
+;; Python 用の設定エンド
+
 
 (leaf puni
   :doc "Parentheses Universalistic"
