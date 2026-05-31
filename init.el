@@ -6,7 +6,8 @@
 ;; 注意事項
 ;; ※ 事前にターミナルで `pip install pyright` が必要です
 ;; ※ 事前にターミナルで `pip install ruff` が必要です
-;;; Code:
+;;     M-x pyvenv-workon または M-x pyvenv-activate を実行して、
+;;     該当する仮想環境を有効化する
 
 (eval-and-compile
   (customize-set-variable
@@ -264,32 +265,45 @@
            (lsp-ui-peek-enable . t)))
 
 
+
+;; ------------------------------------------------
+;; for python
+;; ------------------------------------------------
+
+;; 仮想環境 (venv) をEmacs内で切り替えるための設定
+(leaf pyvenv
+  :ensure t
+  :config
+  ;; 仮想環境が有効化されたら、自動でLSPを再起動し、ルーターなどのパスも再認識させる
+  (add-hook 'pyvenv-post-activate-hook #'lsp-restart-workspace))
+
 ;; Python 基本設定
 (leaf python
   :doc "Python editing mode"
   :tag "builtin" "languages"
   :mode ("\\.py\\'" . python-mode)
-  :hook (python-mode-hook . lsp-deferred)
+  ;; 【修正】ここでの lsp-deferred は一旦コメントアウトするか削除します
+  ;; :hook (python-mode-hook . lsp-deferred)
   :custom ((python-indent-offset . 4)))
 
 ;; LSP Pyright (静的解析サーバ)
-;; ※ 事前にターミナルで `pip install pyright` が必要です
 (leaf lsp-pyright
   :doc "LSP client for Python using Pyright"
   :ensure t
   :after lsp-mode python
   :custom ((lsp-pyright-multi-root . t))
   :hook (python-mode-hook . (lambda ()
-                              (require 'lsp-pyright)
-                              (lsp-deferred))))
+                              ;; pyvenvが環境をロードするのを少し待ってからLSPを起動するための安全策
+                              (run-with-idle-timer 0.1 nil #'lsp-deferred))))
 
 ;; Ruff (高速フォーマッタ/リンター)
-;; ※ 事前にターミナルで `pip install ruff` が必要です
 (leaf ruff-format
   :doc "Use ruff to format python code"
   :ensure t
   :after python
-  :hook (python-mode-hook . ruff-format-on-save-mode))
+  ;; 【修正】pyvenv で環境が確定した後にマイナーモードを有効化する
+  :hook (python-mode-hook . (lambda ()
+                              (run-with-idle-timer 0.1 nil #'ruff-format-on-save-mode))))
 
 ;; Python 用の補完強化 (Cape)
 (leaf cape-python
