@@ -390,6 +390,26 @@
          ("C-c L" . magit-log-buffer-file))
   :custom (magit-display-buffer-function . 'magit-display-buffer-fullcolumn-most-v1))
 
+;; --- Gemini AI (gptel) の設定 ---
+(leaf gptel
+  :doc "A versatile LLM client for Emacs"
+  :ensure t
+  :bind (("C-c g g" . gptel)          ; チャットバッファを開く
+         ("C-c g *" . gptel-menu))    ; 選択範囲への指示やメニューを開く
+  :config
+  (require 'gptel-gemini)
+  
+  ;; Gemini バックエンドとモデルの設定
+  (setq-default 
+   ;; 現在安定して利用できる上位モデル（Pro版）を指定
+   gptel-model "gemini-2.5-flash" 
+   
+   gptel-backend
+   (gptel-make-gemini "Gemini"
+     ;; ↓ 発行した無料枠のAPIキーをここに直接記述します
+     :key "" ; ここにAPI Keyをいれる
+     :stream t)))
+
 (leaf transient
   :doc "Transient commands (Magit depends on this)"
   :ensure t
