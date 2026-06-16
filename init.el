@@ -297,13 +297,15 @@
   :bind (:lsp-mode-map
          ("C-c r" . lsp-rename)
          ("C-c a" . lsp-execute-code-action))
-  :hook ((haskell-mode-hook . lsp-deferred)
+  :hook ((lsp-mode-hook . lsp-ui-mode)
+         ;; Python 用の安全な保存時自動フック
          (python-mode-hook . (lambda ()
-                               (add-hook 'before-save-hook #'lsp-format-buffer nil t)
-                               (add-hook 'before-save-hook #'lsp-organize-imports nil t)))
+                               (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-format-buffer) (lsp-format-buffer))) nil t)
+                               (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-organize-imports) (lsp-organize-imports))) nil t)))
+         ;; Haskell 用の安全な保存時自動フック（重複を統合）
          (haskell-mode-hook . (lambda ()
-                                (add-hook 'before-save-hook #'lsp-format-buffer nil t)
-                                (add-hook 'before-save-hook #'lsp-organize-imports nil t)))))
+                                (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-format-buffer) (lsp-format-buffer))) nil t)
+                                (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-organize-imports) (lsp-organize-imports))) nil t)))))
 
 (leaf lsp-ui
   :ensure t
@@ -378,7 +380,12 @@
   :mode (("\\.md\\'" . gfm-mode)
          ("\\.markdown\\'" . gfm-mode))
   :hook (markdown-mode-hook . visual-line-mode)
-  :custom ((markdown-hide-markup . t)))
+  ;; ↓↓↓ ここを追加：C-c t で瞬時に表示を切り替える！
+  :bind (:markdown-mode-map
+         ("C-c t" . markdown-toggle-markup-hiding))
+  ;; ↓ 初期状態をどちらにしておくかはお好みで選んでください
+  :custom ((markdown-hide-markup . nil) ; nilなら最初はそのまま表示、tなら最初はレンダリング表示
+           (markdown-fontify-code-blocks-natively . t)))
 
 ;; --- バージョン管理 (Git) ---
 (leaf magit
@@ -391,6 +398,9 @@
   :custom (magit-display-buffer-function . 'magit-display-buffer-fullcolumn-most-v1))
 
 ;; --- Gemini AI (gptel) の設定 ---
+;; 利用の以下の処理でAPIキーを格納する。
+;; echo "AIzaSyあなたの実際のAPIキー" > ~/.gemini_key
+;; chmod 600 ~/.gemini_key  # 自分以外のユーザーからは見えないように権限を絞る
 (leaf gptel
   :doc "A versatile LLM client for Emacs"
   :ensure t
@@ -401,13 +411,15 @@
   
   ;; Gemini バックエンドとモデルの設定
   (setq-default 
-   ;; 現在安定して利用できる上位モデル（Pro版）を指定
    gptel-model "gemini-2.5-flash" 
    
    gptel-backend
    (gptel-make-gemini "Gemini"
-     ;; ↓ 発行した無料枠のAPIキーをここに直接記述します
-     :key "" ; ここにAPI Keyをいれる
+     ;; ↓ 別ファイルからキーを読み込んで前後の空白を削除する安全な処理
+     :key (lambda ()
+            (with-temp-buffer
+              (insert-file-contents "~/.gemini_key")
+              (string-trim (buffer-string))))
      :stream t)))
 
 (leaf transient
