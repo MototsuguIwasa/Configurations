@@ -56,13 +56,35 @@
            (ns-right-option-modifier . 'hyper)
            (ns-right-command-modifier . 'meta)
            (default-frame-alist . '((ns-appearance . dark)
-                                    (ns-transparent-titlebar . t)))))
-
-(leaf all-the-icons
-  :ensure t
+                                    (ns-transparent-titlebar . t))))
   :config
-  (unless (member "all-the-icons" (font-family-list))
-    (all-the-icons-install-fonts t)))
+  ;; Mac環境の時だけデフォルトのフォントサイズを大きくする (140 = 14pt相当)
+  ;; 文字がまだ小さい場合は 150 や 160 に増やしてみてください
+  (set-face-attribute 'default nil :height 140))
+
+(leaf nerd-icons
+  ;;Emacs側
+  ;; 初回起動時、M-x nerd-icons-install-fonts を実行します
+  ;;
+  ;;OS:Debian
+  ;; sudo apt update
+  ;; sudo apt install fonts-font-awesome fonts-materialdesignicons-webfont fonts-weather-icons
+  ;;
+  ;; cd ~/.local/share/fonts
+  ;; curl -fLo "SymbolsNerdFontMono-Regular.ttf" https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf
+  ;; curl -fLo "octicons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/octicons.ttf
+  ;; curl -fLo "file-icons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/file-icons.ttf
+  ;; fc-cache -f -v
+  ;;
+  ;;OS:MacOS
+  ;; cd ~/Library/Fonts
+  ;; curl -fLo "SymbolsNerdFontMono-Regular.ttf" https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf
+  ;; curl -fLo "file-icons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/file-icons.ttf
+  ;; curl -fLo "fontawesome.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/fontawesome.ttf
+  ;; curl -fLo "material-design-icons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/material-design-icons.ttf
+  ;; curl -fLo "octicons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/octicons.ttf
+  ;; curl -fLo "weathericons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/weathericons.ttf
+  :ensure t)
 
 (leaf doom-themes
   :ensure t
@@ -207,7 +229,8 @@
          ("C-M-s" . nil)
          ("C-M-s s" . isearch-forward)
          ("C-M-s C-s" . isearch-forward-regexp)
-         ("C-M-s r" . consult-ripgrep)
+         ;; ↓ ここを C-M-s c に変更して重複を解消！
+         ("C-M-s c" . consult-ripgrep)
          (minibuffer-local-map
           :package emacs
           ("C-r" . consult-history))))
@@ -285,6 +308,24 @@
   (with-eval-after-load 'flycheck
     (flycheck-add-next-checker 'haskell-ghc 'haskell-hlint)))
 
+;; --- Tree-sitter (構文解析・高度なハイライト) ---
+(leaf treesit
+  :doc "Built-in Tree-sitter core settings"
+  :custom
+  ;; 4は最高レベルのハイライト（変数、属性、プロパティまで細かく色付け）
+  (treesit-font-lock-level . 4))
+
+(leaf treesit-auto
+  :doc "Automatically install and use tree-sitter major modes"
+  :ensure t
+  :global-minor-mode global-treesit-auto-mode
+  :custom
+  ;; 文法ファイルが未インストールの場合は自動でダウンロードする (確認を出したい場合は 'prompt に変更)
+  (treesit-auto-install . t)
+  :config
+  ;; 対応しているすべての言語で自動的に ts-mode を有効化する
+  (treesit-auto-add-to-auto-mode-alist 'all))
+
 ;; --- LSP コアクライアント ---
 (leaf lsp-mode
   :ensure t
@@ -341,18 +382,17 @@
   :mode ("\\.py\\'" . python-mode)
   :custom ((python-indent-offset . 4)))
 
+;; lsp-pyright や lsp-ruff も ts-mode で起動させる
 (leaf lsp-pyright
-  :doc "LSP client for Python using Pyright"
   :ensure t
   :after lsp-mode python
   :custom ((lsp-pyright-multi-root . t))
-  :hook (python-mode-hook . lsp-deferred))
+  :hook ((python-mode-hook python-ts-mode-hook) . lsp-deferred))
 
 (leaf lsp-ruff
-  :doc "LSP client for Python using Ruff"
   :after lsp-mode python
   :require lsp-ruff
-  :hook (python-mode-hook . lsp-deferred))
+  :hook ((python-mode-hook python-ts-mode-hook) . lsp-deferred))
 
 (leaf cape-python
   :after (cape python)
@@ -380,12 +420,22 @@
   :mode (("\\.md\\'" . gfm-mode)
          ("\\.markdown\\'" . gfm-mode))
   :hook (markdown-mode-hook . visual-line-mode)
-  ;; ↓↓↓ ここを追加：C-c t で瞬時に表示を切り替える！
   :bind (:markdown-mode-map
-         ("C-c t" . markdown-toggle-markup-hiding))
-  ;; ↓ 初期状態をどちらにしておくかはお好みで選んでください
-  :custom ((markdown-hide-markup . nil) ; nilなら最初はそのまま表示、tなら最初はレンダリング表示
-           (markdown-fontify-code-blocks-natively . t)))
+         ("C-c t" . markdown-toggle-markup-hiding)
+         ;; 目次(TOC)の自動生成・更新
+         ("C-c C-t" . markdown-toc-generate-or-refresh))
+  :custom ((markdown-hide-markup . nil)
+           (markdown-fontify-code-blocks-natively . t)
+           ;; Debian環境でのプレビュー用 (※事前に sudo apt install pandoc が必要です)
+           (markdown-command . "pandoc -f gfm -t html5 -s")))
+
+;; --- 集中執筆モード (ブログ特化) ---
+(leaf olivetti
+  :doc "Minor mode for a nice writing environment"
+  :ensure t
+  ;; Markdownを開いた時に自動で中央寄せの集中モードにする
+  :hook (markdown-mode-hook . olivetti-mode)
+  :custom ((olivetti-body-width . 80))) ;; 1行の幅を80文字（日本語なら約40文字）に固定
 
 ;; --- バージョン管理 (Git) ---
 (leaf magit
