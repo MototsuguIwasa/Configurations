@@ -343,7 +343,7 @@
          (python-mode-hook . (lambda ()
                                (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-format-buffer) (lsp-format-buffer))) nil t)
                                (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-organize-imports) (lsp-organize-imports))) nil t)))
-         ;; Python 用の安全な保存時自動フック（Trxcxsxcee-sitter 版の python-ts-mode を追加！）
+         ;; Python 用の安全な保存時自動フック（Tree-sitter 版の python-ts-mode を追加）
          (python-ts-mode-hook . (lambda ()
                                   (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-format-buffer) (lsp-format-buffer))) nil t)
                                   (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-organize-imports) (lsp-organize-imports))) nil t)))
