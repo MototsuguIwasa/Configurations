@@ -433,6 +433,25 @@
            ;; Debian環境でのプレビュー用 (※事前に sudo apt install pandoc が必要です)
            (markdown-command . "pandoc -f gfm -t html5 -s")))
 
+;; --- Org-mode (シンプルなメモ・タスク管理) ---
+;; Markdown 形式で保存する操作手順
+;; Markdown に変換したい .org ファイルを開いた状態で以下のショートカットキーを順番に押します。
+;;   C-c C-e を押す
+;; 画面下部に「Export Dispatcher」というメニュー画面がポップアップします。HTML や PDF など様々な形式への変換メニューが並んでいます。
+;;   m を押す
+;;「Export to Markdown」というメニューが選択されます。
+;;  さらに m を押す
+;;「To file」が選択され、エクスポートが実行されます。
+(leaf org
+  :doc "Outline-based notes management and organizer"
+  :require ox-md                  ; ← 【追加】Markdownへのエクスポート機能を有効化
+  :custom
+  ((org-startup-indented . t)     ; 見出しの深さに合わせてテキストを字下げして綺麗に表示
+   (org-hide-leading-stars . t)   ; 階層の星(*)をすっきり見せる（一番右の星だけ表示）
+   (org-log-done . 'time))        ; DONE に切り替えた瞬間に、完了したタイムスタンプを自動記録
+  :hook
+  (org-mode-hook . visual-line-mode)) ; Markdown と同じく、ウィンドウ端で綺麗に折り返す
+
 ;; --- 集中執筆モード (ブログ特化) ---
 (leaf olivetti
   :doc "Minor mode for a nice writing environment"
