@@ -335,9 +335,9 @@
            (lsp-diagnostics-provider . :flycheck)
            (lsp-completion-provider . :capf)
            (lsp-before-save-hook . nil))
-  :bind (:lsp-mode-map
+  :bind ((lsp-mode-map
          ("C-c r" . lsp-rename)
-         ("C-c a" . lsp-execute-code-action))
+         ("C-c a" . lsp-execute-code-action)))
   :hook ((lsp-mode-hook . lsp-ui-mode)
          ;; Python 用の安全な保存時自動フック（従来の python-mode）
          (python-mode-hook . (lambda ()
@@ -400,8 +400,9 @@
 
 (leaf cape-python
   :after (cape python)
-  :config
-  (add-to-list 'completion-at-point-functions #'cape-dabbrev))
+  :hook ((python-mode-hook python-ts-mode-hook) .
+         (lambda ()
+           (add-hook 'completion-at-point-functions #'cape-dabbrev nil t))))
 
 ;; --- データベース (MariaDB) ---
 (leaf sql
@@ -424,10 +425,10 @@
   :mode (("\\.md\\'" . gfm-mode)
          ("\\.markdown\\'" . gfm-mode))
   :hook (markdown-mode-hook . visual-line-mode)
-  :bind (:markdown-mode-map
+  :bind ((markdown-mode-map
          ("C-c t" . markdown-toggle-markup-hiding)
          ;; 目次(TOC)の自動生成・更新
-         ("C-c C-t" . markdown-toc-generate-or-refresh))
+         ("C-c C-t" . markdown-toc-generate-or-refresh)))
   :custom ((markdown-hide-markup . nil)
            (markdown-fontify-code-blocks-natively . t)
            ;; Debian環境でのプレビュー用 (※事前に sudo apt install pandoc が必要です)
