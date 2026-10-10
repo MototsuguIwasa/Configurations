@@ -77,13 +77,16 @@
   ;; fc-cache -f -v
   ;;
   ;;OS:MacOS
-  ;; cd ~/Library/Fonts
+  ;; cd ~/Library/Fonts  (Fontsフォルダがないない場合は、フォルダを作成する。Golden Gateでは作成して問題ないことを確認済)
   ;; curl -fLo "SymbolsNerdFontMono-Regular.ttf" https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf
   ;; curl -fLo "file-icons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/file-icons.ttf
   ;; curl -fLo "fontawesome.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/fontawesome.ttf
   ;; curl -fLo "material-design-icons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/material-design-icons.ttf
   ;; curl -fLo "octicons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/octicons.ttf
   ;; curl -fLo "weathericons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/weathericons.ttf
+  ;;
+  ;; フォント導入後にフォントが適用されていないようであれば、macの再起動をためす。
+
   :ensure t)
 
 (leaf doom-themes
