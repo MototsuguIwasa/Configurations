@@ -474,31 +474,6 @@
          ("C-c L" . magit-log-buffer-file))
   :custom (magit-display-buffer-function . 'magit-display-buffer-fullcolumn-most-v1))
 
-;; --- Gemini AI (gptel) の設定 ---
-;; 利用の以下の処理でAPIキーを格納する。
-;; echo "AIzaSyあなたの実際のAPIキー" > ~/.gemini_key
-;; chmod 600 ~/.gemini_key  # 自分以外のユーザーからは見えないように権限を絞る
-(leaf gptel
-  :doc "A versatile LLM client for Emacs"
-  :ensure t
-  :bind (("C-c g g" . gptel)          ; チャットバッファを開く
-         ("C-c g *" . gptel-menu))    ; 選択範囲への指示やメニューを開く
-  :config
-  (require 'gptel-gemini)
-  
-  ;; Gemini バックエンドとモデルの設定
-  (setq-default 
-   gptel-model "gemini-2.5-flash" 
-   
-   gptel-backend
-   (gptel-make-gemini "Gemini"
-     ;; ↓ 別ファイルからキーを読み込んで前後の空白を削除する安全な処理
-     :key (lambda ()
-            (with-temp-buffer
-              (insert-file-contents "~/.gemini_key")
-              (string-trim (buffer-string))))
-     :stream t)))
-
 (leaf transient
   :doc "Transient commands (Magit depends on this)"
   :ensure t
