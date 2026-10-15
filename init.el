@@ -1,10 +1,10 @@
 ;;; init.el --- My init.el  -*- lexical-binding: t; -*-
 ;; Copyright (C) 2025  Mototsugu Iwasa
-;; Author: Mototsugu iwasa
+;; Author: Mototsugu Iwasa
 ;;; Commentary:
-;; My init.el.
+;; My init.el (Debian / macOS 共通・Emacs 31 対応版)
 ;; 注意事項
-;; ※ 事事前にターミナルで `pip install pyright` が必要です
+;; ※ 事前にターミナルで `pip install pyright` が必要です
 ;; ※ 事前にターミナルで `pip install ruff` が必要です
 ;;     M-x pyvenv-workon または M-x pyvenv-activate を実行して、
 ;;     該当する仮想環境を有効化する
@@ -63,10 +63,10 @@
   (set-face-attribute 'default nil :height 140))
 
 (leaf nerd-icons
-  ;;Emacs側
+  ;; Emacs側
   ;; 初回起動時、M-x nerd-icons-install-fonts を実行します
   ;;
-  ;;OS:Debian
+  ;; OS:Debian
   ;; sudo apt update
   ;; sudo apt install fonts-font-awesome fonts-materialdesignicons-webfont fonts-weather-icons
   ;;
@@ -76,8 +76,8 @@
   ;; curl -fLo "file-icons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/file-icons.ttf
   ;; fc-cache -f -v
   ;;
-  ;;OS:MacOS
-  ;; cd ~/Library/Fonts  (Fontsフォルダがないない場合は、フォルダを作成する。Golden Gateでは作成して問題ないことを確認済)
+  ;; OS:MacOS
+  ;; cd ~/Library/Fonts  (Fontsフォルダがない場合は、フォルダを作成する。Golden Gateでは作成して問題ないことを確認済)
   ;; curl -fLo "SymbolsNerdFontMono-Regular.ttf" https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf
   ;; curl -fLo "file-icons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/file-icons.ttf
   ;; curl -fLo "fontawesome.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/fontawesome.ttf
@@ -86,7 +86,6 @@
   ;; curl -fLo "weathericons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/weathericons.ttf
   ;;
   ;; フォント導入後にフォントが適用されていないようであれば、macの再起動をためす。
-
   :ensure t)
 
 (leaf doom-themes
@@ -123,8 +122,8 @@
             (user-login-name . "mototsugu")
             (create-lockfiles . nil)
             (tab-width . 4)
-            (debug-on-error . t)
-            (init-file-debug . t)
+            (debug-on-error . nil)
+            (init-file-debug . nil)
             (frame-resize-pixelwise . t)
             (enable-recursive-minibuffers . t)
             (history-length . 1000)
@@ -140,9 +139,10 @@
             (menu-bar-mode . t)
             (tool-bar-mode . nil)
             (scroll-bar-mode . nil)
-            (indent-tabs-mode . nil))
+            (indent-tabs-mode . nil)
+            ;; Emacs 28+ 標準の y/n 短縮回答設定 (Macのnative-compエラー回避)
+            (use-short-answers . t))
   :config
-  (defalias 'yes-or-no-p 'y-or-n-p)
   (keyboard-translate ?\C-h ?\C-?))
 
 (leaf autorevert
@@ -152,6 +152,11 @@
 (leaf delsel
   :doc "delete selection if you insert"
   :global-minor-mode delete-selection-mode)
+
+(leaf electric-pair-mode
+  :doc "Automatically insert matching pairs of parentheses"
+  :tag "builtin"
+  :global-minor-mode electric-pair-mode)
 
 (leaf paren
   :doc "highlight matching paren"
@@ -232,7 +237,6 @@
          ("C-M-s" . nil)
          ("C-M-s s" . isearch-forward)
          ("C-M-s C-s" . isearch-forward-regexp)
-         ;; ↓ ここを C-M-s c に変更して重複を解消！
          ("C-M-s c" . consult-ripgrep)
          (minibuffer-local-map
           :package emacs
@@ -261,7 +265,6 @@
   :doc "Consult integration for Embark"
   :ensure t
   :after embark consult
-  ;; ↓ :require ではなく :init で確実にパッケージを存在させる
   :init (require 'embark-consult nil t)
   :hook (embark-collect-mode-hook . consult-preview-at-point-mode))
 
@@ -339,14 +342,13 @@
            (lsp-completion-provider . :capf)
            (lsp-before-save-hook . nil))
   :bind ((lsp-mode-map
-         ("C-c r" . lsp-rename)
-         ("C-c a" . lsp-execute-code-action)))
-  :hook ((lsp-mode-hook . lsp-ui-mode)
-         ;; Python 用の安全な保存時自動フック（従来の python-mode）
+          ("C-c r" . lsp-rename)
+          ("C-c a" . lsp-execute-code-action)))
+  :hook (;; Python 用の安全な保存時自動フック（従来の python-mode）
          (python-mode-hook . (lambda ()
                                (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-format-buffer) (lsp-format-buffer))) nil t)
                                (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-organize-imports) (lsp-organize-imports))) nil t)))
-         ;; Python 用の安全な保存時自動フック（Tree-sitter 版の python-ts-mode を追加）
+         ;; Python 用の安全な保存時自動フック（Tree-sitter 版の python-ts-mode）
          (python-ts-mode-hook . (lambda ()
                                   (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-format-buffer) (lsp-format-buffer))) nil t)
                                   (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-organize-imports) (lsp-organize-imports))) nil t)))
@@ -375,7 +377,8 @@
 
 (leaf lsp-haskell
   :ensure t
-  :after haskell-mode lsp-mode)
+  :after haskell-mode lsp-mode
+  :hook (haskell-mode-hook . lsp-deferred))
 
 ;; --- Python 開発環境 ---
 (leaf pyvenv
@@ -384,25 +387,24 @@
   (add-hook 'pyvenv-post-activate-hook #'lsp-restart-workspace))
 
 (leaf python
-  :doc "Python editing mode"
+  :doc "Python editing mode (mode association handled by treesit-auto)"
   :tag "builtin" "languages"
-  :mode ("\\.py\\'" . python-mode)
   :custom ((python-indent-offset . 4)))
 
 ;; lsp-pyright や lsp-ruff も ts-mode で起動させる
 (leaf lsp-pyright
   :ensure t
-  :after lsp-mode python
+  :after lsp-mode
   :custom ((lsp-pyright-multi-root . t))
   :hook ((python-mode-hook python-ts-mode-hook) . lsp-deferred))
 
 (leaf lsp-ruff
-  :after lsp-mode python
+  :after lsp-mode
   :require lsp-ruff
   :hook ((python-mode-hook python-ts-mode-hook) . lsp-deferred))
 
 (leaf cape-python
-  :after (cape python)
+  :after cape
   :hook ((python-mode-hook python-ts-mode-hook) .
          (lambda ()
            (add-hook 'completion-at-point-functions #'cape-dabbrev nil t))))
@@ -429,26 +431,27 @@
          ("\\.markdown\\'" . gfm-mode))
   :hook (markdown-mode-hook . visual-line-mode)
   :bind ((markdown-mode-map
-         ("C-c t" . markdown-toggle-markup-hiding)
-         ;; 目次(TOC)の自動生成・更新
-         ("C-c C-t" . markdown-toc-generate-or-refresh)))
+          ("C-c t" . markdown-toggle-markup-hiding)
+          ;; 目次(TOC)の自動生成・更新
+          ("C-c C-t" . markdown-toc-generate-or-refresh)))
   :custom ((markdown-hide-markup . nil)
            (markdown-fontify-code-blocks-natively . t)
-           ;; Debian環境でのプレビュー用 (※事前に sudo apt install pandoc が必要です)
+           ;; Debian/Mac環境でのプレビュー用 (※事前に pandoc のインストールが必要です)
            (markdown-command . "pandoc -f gfm -t html5 -s")))
+
+(leaf markdown-toc
+  :ensure t
+  :after markdown-mode)
 
 ;; --- Org-mode (シンプルなメモ・タスク管理) ---
 ;; Markdown 形式で保存する操作手順
 ;; Markdown に変換したい .org ファイルを開いた状態で以下のショートカットキーを順番に押します。
-;;   C-c C-e を押す
-;; 画面下部に「Export Dispatcher」というメニュー画面がポップアップします。HTML や PDF など様々な形式への変換メニューが並んでいます。
-;;   m を押す
-;;「Export to Markdown」というメニューが選択されます。
-;;  さらに m を押す
-;;「To file」が選択され、エクスポートが実行されます。
+;;   C-c C-e を押す -> 「Export Dispatcher」メニュー画面がポップアップ
+;;   m を押す       -> 「Export to Markdown」を選択
+;;   さらに m を押す -> 「To file」が選択され、エクスポートが実行されます。
 (leaf org
   :doc "Outline-based notes management and organizer"
-  :require ox-md                  ; ← 【追加】Markdownへのエクスポート機能を有効化
+  :require ox-md                  ; Markdownへのエクスポート機能を有効化
   :custom
   ((org-startup-indented . t)     ; 見出しの深さに合わせてテキストを字下げして綺麗に表示
    (org-hide-leading-stars . t)   ; 階層の星(*)をすっきり見せる（一番右の星だけ表示）
