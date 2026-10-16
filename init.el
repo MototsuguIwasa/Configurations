@@ -454,7 +454,10 @@
    (org-hide-leading-stars . t)   ; 階層の星(*)をすっきり見せる（一番右の星だけ表示）
    (org-log-done . 'time))        ; DONE に切り替えた瞬間に、完了したタイムスタンプを自動記録
   :hook
-  (org-mode-hook . visual-line-mode)) ; Markdown と同じく、ウィンドウ端で綺麗に折り返す
+  (org-mode-hook . visual-line-mode) ; Markdown と同じく、ウィンドウ端で綺麗に折り返す
+  :config
+  ;; 日付タイムスタンプ (C-c .) の曜日表記を OS 問わず日本語 (月, 火...) に統一する
+  (setq system-time-locale "ja_JP.UTF-8"))
 
 ;; --- 集中執筆モード (ブログ特化) ---
 (leaf olivetti
