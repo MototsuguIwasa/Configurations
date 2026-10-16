@@ -3,12 +3,19 @@
 ;; Author: Mototsugu Iwasa
 ;;; Commentary:
 ;; My init.el (Debian / macOS 共通・Emacs 31 対応版)
-;; 注意事項
-;; ※ 事前にターミナルで `pip install pyright` が必要です
-;; ※ 事前にターミナルで `pip install ruff` が必要です
-;;     M-x pyvenv-workon または M-x pyvenv-activate を実行して、
-;;     該当する仮想環境を有効化する
-
+;;
+;; ■ 事前準備（OS側のパッケージ導入）
+;; [Debian] sudo apt update && sudo apt install ripgrep pandoc git build-essential
+;; [macOS]  brew install ripgrep pandoc
+;;
+;; ■ Python 開発環境の準備
+;; ※ 対象の仮想環境内（または pipx 等）で `pip install pyright ruff` が必要です
+;; ※ Emacs 上で M-x pyvenv-workon または M-x pyvenv-activate を実行して、
+;;    該当する仮想環境を有効化してください
+;;
+;; ■ Haskell 開発環境の準備
+;; ※ ghcup 等で ghc / haskell-language-server (HLS) / hlint の導入が必要です
+;;
 ;; =====================================================================
 ;; 1. 起動・パッケージ管理の初期化 (最優先)
 ;; =====================================================================
@@ -63,29 +70,19 @@
   (set-face-attribute 'default nil :height 140))
 
 (leaf nerd-icons
-  ;; Emacs側
-  ;; 初回起動時、M-x nerd-icons-install-fonts を実行します
+  ;; 初回起動時、Emacs上で M-x nerd-icons-install-fonts を実行すると
+  ;; 必要なフォント (SymbolsNerdFontMono-Regular.ttf) が自動インストールされます。
   ;;
-  ;; OS:Debian
-  ;; sudo apt update
-  ;; sudo apt install fonts-font-awesome fonts-materialdesignicons-webfont fonts-weather-icons
-  ;;
-  ;; cd ~/.local/share/fonts
+  ;; ※ 手動で導入する場合:
+  ;; [OS: Debian]
+  ;; mkdir -p ~/.local/share/fonts && cd ~/.local/share/fonts
   ;; curl -fLo "SymbolsNerdFontMono-Regular.ttf" https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf
-  ;; curl -fLo "octicons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/octicons.ttf
-  ;; curl -fLo "file-icons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/file-icons.ttf
   ;; fc-cache -f -v
   ;;
-  ;; OS:MacOS
-  ;; cd ~/Library/Fonts  (Fontsフォルダがない場合は、フォルダを作成する。Golden Gateでは作成して問題ないことを確認済)
+  ;; [OS: macOS]
+  ;; mkdir -p ~/Library/Fonts && cd ~/Library/Fonts
   ;; curl -fLo "SymbolsNerdFontMono-Regular.ttf" https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf
-  ;; curl -fLo "file-icons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/file-icons.ttf
-  ;; curl -fLo "fontawesome.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/fontawesome.ttf
-  ;; curl -fLo "material-design-icons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/material-design-icons.ttf
-  ;; curl -fLo "octicons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/octicons.ttf
-  ;; curl -fLo "weathericons.ttf" https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/weathericons.ttf
-  ;;
-  ;; フォント導入後にフォントが適用されていないようであれば、macの再起動をためす。
+  ;; (導入後に反映されない場合は Mac の再起動を試す)
   :ensure t)
 
 (leaf doom-themes
