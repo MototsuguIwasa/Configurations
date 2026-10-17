@@ -53,6 +53,39 @@
 ;; =====================================================================
 ;; 2. Emacsの見た目・UI・テーマ設定 (起動直後に適用)
 ;; =====================================================================
+;; --- フォント設定 (Mac / Debian 共通) ---
+(leaf font-settings
+  :doc "Set default font for avoiding Org-mode table misalignment"
+  :config
+  ;; OSにインストールしたフォント名を指定します
+  ;; (HackGen の場合は "HackGen" などに書き換えてください)
+  ;; Org-modeの表で罫線が揃うように等幅フォントである「PlemolJP」を導入する。
+  ;; 1．GitHubのPlemolJPリリースページ（https://github.com/yuru7/PlemolJP/releases）にアクセスする。
+  ;; 2. Assets」の中から、最新版のzipファイル（例：PlemolJP_vX.X.X.zip）をダウンロードして解凍します。
+  ;;    (※ Nerd Fonts（アイコン付き）を使いたい場合は PlemolJP_NF_vX.X.X.zip を選んでください)
+  ;; 3. ダウンロードしたファイルを解凍する。
+  ;;    解凍では、２つのフォルダが作成れる (PlemoUP35Console_NF と PlemoUPConsole_NF)
+  ;;    ***35*** となっている方は、半角3 全角5の比率で作成されているので「35」という数字がついていない方を使うこと
+  ;;
+  ;; 4. システムへの取り込み(Devianの場合)
+  ;;    # フォント用のディレクトリが存在しない場合は作成
+  ;;    mkdir -p ~/.local/share/fonts/
+  ;;    # 解凍したフォルダの中にある .ttf ファイルをすべてコピー
+  ;;    cp -r PlemolJP*/*.ttf ~/.local/share/fonts/
+  ;;    # フォントキャッシュを更新してOSに認識させる
+  ;;    fc-cache -f -v
+  ;; 
+  (set-face-attribute 'default nil :family "PlemolJP")
+  
+  ;; Macの時だけサイズを140(14pt)に、それ以外(Debian)は120(12pt)にするなど
+  ;; OSごとのサイズ微調整もここで一括管理できます
+  (if (eq 'ns window-system)
+      ;; Mac環境の時だけデフォルトのフォントサイズを大きくする (140 = 14pt相当)
+      ;; 文字がまだ小さい場合は 150 や 160 に増やしてみてください
+      (set-face-attribute 'default nil :height 140)
+      (set-face-attribute 'default nil :height 120)))
+
+;; --- UI 設定 (Mac) ---
 (leaf ns
   :doc "next/open/gnustep / macos communication module"
   :when (eq 'ns window-system)
@@ -63,11 +96,7 @@
            (ns-right-option-modifier . 'hyper)
            (ns-right-command-modifier . 'meta)
            (default-frame-alist . '((ns-appearance . dark)
-                                    (ns-transparent-titlebar . t))))
-  :config
-  ;; Mac環境の時だけデフォルトのフォントサイズを大きくする (140 = 14pt相当)
-  ;; 文字がまだ小さい場合は 150 や 160 に増やしてみてください
-  (set-face-attribute 'default nil :height 140))
+                                    (ns-transparent-titlebar . t)))))
 
 (leaf nerd-icons
   ;; 初回起動時、Emacs上で M-x nerd-icons-install-fonts を実行すると
@@ -458,6 +487,12 @@
   :config
   ;; 日付タイムスタンプ (C-c .) の曜日表記を OS 問わず日本語 (月, 火...) に統一する
   (setq system-time-locale "ja_JP.UTF-8"))
+
+;; --- Org-modeでテーブルのピクセル単位のズレを完璧に補正 ---
+(leaf valign
+  :doc "Pixel-perfect visual alignment for Org and Markdown tables"
+  :ensure t
+  :hook ((org-mode-hook markdown-mode-hook) . valign-mode))
 
 ;; --- 集中執筆モード (ブログ特化) ---
 (leaf olivetti
