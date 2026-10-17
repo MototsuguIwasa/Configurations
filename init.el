@@ -67,13 +67,17 @@
   ;;    解凍では、２つのフォルダが作成れる (PlemoUP35Console_NF と PlemoUPConsole_NF)
   ;;    ***35*** となっている方は、半角3 全角5の比率で作成されているので「35」という数字がついていない方を使うこと
   ;;
-  ;; 4. システムへの取り込み(Devianの場合)
+  ;; 4. 1 システムへの取り込み(Devianの場合)
   ;;    # フォント用のディレクトリが存在しない場合は作成
   ;;    mkdir -p ~/.local/share/fonts/
   ;;    # 解凍したフォルダの中にある .ttf ファイルをすべてコピー
   ;;    cp -r PlemolJP*/*.ttf ~/.local/share/fonts/
   ;;    # フォントキャッシュを更新してOSに認識させる
   ;;    fc-cache -f -v
+  ;;
+  ;; 4. 2 システムへの取り込み(Macの場合)
+  ;;   # 解凍したPlemolJPのフォルダがあるディレクトリに移動して実行します
+  ;;   cp -r *.ttf ~/Library/Fonts/
   ;; 
   (set-face-attribute 'default nil :family "PlemolJP")
   
