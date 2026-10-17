@@ -6,7 +6,8 @@
 ;;
 ;; ■ 事前準備（OS側のパッケージ導入）
 ;; [Debian] sudo apt update && sudo apt install ripgrep pandoc git build-essential
-;; [macOS]  brew install ripgrep pandoc
+;; [macOS]  brew install ripgrep pandoc coreutils
+;;          (補足) coreutils は Diredコマンドの中で利用する (Macでの表示崩れを防止するために導入)
 ;;
 ;; ■ Python 開発環境の準備
 ;; ※ 対象の仮想環境内（または pipx 等）で `pip install pyright ruff` が必要です
@@ -56,7 +57,6 @@
 ;; --- フォント設定 (Mac / Debian 共通) ---
 (leaf font-settings
   :doc "Set default font for avoiding Org-mode table misalignment"
-  :config
   ;; OSにインストールしたフォント名を指定します
   ;; (HackGen の場合は "HackGen" などに書き換えてください)
   ;; Org-modeの表で罫線が揃うように等幅フォントである「PlemolJP」を導入する。
@@ -79,15 +79,22 @@
   ;;   # 解凍したPlemolJPのフォルダがあるディレクトリに移動して実行します
   ;;   cp -r *.ttf ~/Library/Fonts/
   ;; 
-  (set-face-attribute 'default nil :family "PlemolJP")
-  
-  ;; Macの時だけサイズを140(14pt)に、それ以外(Debian)は120(12pt)にするなど
-  ;; OSごとのサイズ微調整もここで一括管理できます
+  :config
+  ;; デフォルト（英数字）のフォントを指定
+  (set-face-attribute 'default nil :family "PlemolJP Console NF")
+
+  ;; 【追加】日本語（全角文字）にも確実に PlemolJP を適用する（Macでのズレ防止）
+  (set-fontset-font t 'japanese-jisx0208 (font-spec :family "PlemolJP Console NF"))
+  (set-fontset-font t 'katakana-jisx0201 (font-spec :family "PlemolJP Console NF"))
+
+  ;; OSごとのサイズ微調s
+  ;;   Macの時だけサイズを140(14pt)に、それ以外(Debian)は120(12pt)にするなど
+  ;;   OSごとのサイズ微調整もここで一括管理できます
   (if (eq 'ns window-system)
       ;; Mac環境の時だけデフォルトのフォントサイズを大きくする (140 = 14pt相当)
       ;; 文字がまだ小さい場合は 150 や 160 に増やしてみてください
-      (set-face-attribute 'default nil :height 140)
-      (set-face-attribute 'default nil :height 120)))
+      (set-face-attribute 'default nil :height 140)         ;;  Macの場合
+      (set-face-attribute 'default nil :height 120)))       ;;  Mac意外(Debianのこと)の場合
 
 ;; --- UI 設定 (Mac) ---
 (leaf ns
@@ -217,6 +224,21 @@
   :doc "Save minibuffer history"
   :custom `((savehist-file . ,(locate-user-emacs-file "savehist")))
   :global-minor-mode t)
+
+;; --- フォルダ閲覧・ファイル管理 (Dired) ---
+(leaf dired
+  :doc "Directory editor"
+  :tag "builtin"
+  :custom
+  ;; diredでフォルダを先頭にまとめ、見やすくする
+  (dired-listing-switches . "-alFh --group-directories-first")
+  :config
+  ;; Mac の場合のみ、日本語の列幅計算が正確な GNU ls (gls) を使う
+  (when (eq system-type 'darwin)
+    (let ((gls (executable-find "gls")))
+      (when gls
+        (setq insert-directory-program gls)))))
+
 
 ;; =====================================================================
 ;; 4. 検索・強力な補完エコシステム・編集補助 (コア機能群)
