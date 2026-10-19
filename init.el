@@ -537,13 +537,18 @@
   ;; 日付タイムスタンプ (C-c .) の曜日表記を OS 問わず日本語 (月, 火...) に統一する
   (setq system-time-locale "ja_JP.UTF-8"))
 
-;; --- テーブルのピクセル単位補正 ---
+
+;; --- テーブルのピクセル単位補正 (Debianのみ自動 / Macは手動) ---
 (leaf valign
   :doc "Pixel-perfect visual alignment for Org and Markdown tables"
   :ensure t
   :commands (valign-mode)
+  :custom
+  ;; 縦の罫線(|)を隙間なく綺麗に繋げて表示する（お好みで nil にしてもOKです）
+  (valign-fancy-bar . t)
   :init
   ;; Mac(darwin)以外の環境(Debian)でのみ、OrgとMarkdownで自動的に valign-mode を有効化する
+  ;; Macでの表示遅延を防ぐため自動Hookは外し、必要な時だけ M-x valign-mode で呼ぶ
   (unless (eq system-type 'darwin)
     (add-hook 'org-mode-hook #'valign-mode)
     (add-hook 'markdown-mode-hook #'valign-mode)))
