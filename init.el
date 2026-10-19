@@ -78,23 +78,24 @@
   ;; 4. 2 システムへの取り込み(Macの場合)
   ;;   # 解凍したPlemolJPのフォルダがあるディレクトリに移動して実行します
   ;;   cp -r *.ttf ~/Library/Fonts/
-  ;; 
+  ;;
+  :when (display-graphic-p)
   :config
   ;; デフォルト（英数字）のフォントを指定
   (set-face-attribute 'default nil :family "PlemolJP Console NF")
 
-  ;; 【追加】日本語（全角文字）にも確実に PlemolJP を適用する（Macでのズレ防止）
-  (set-fontset-font t 'japanese-jisx0208 (font-spec :family "PlemolJP Console NF"))
-  (set-fontset-font t 'katakana-jisx0201 (font-spec :family "PlemolJP Console NF"))
+  ;; 日本語（全角文字・漢字・記号）にも確実に PlemolJP を適用する（Macでのフォールバック遅延＆ズレ防止）
+  (dolist (charset '(japanese-jisx0208 japanese-jisx0213.2004-1 katakana-jisx0201 han cjk-misc))
+    (set-fontset-font t charset (font-spec :family "PlemolJP Console NF")))
 
-  ;; OSごとのサイズ微調s
+  ;; OSごとのサイズ微調整
   ;;   Macの時だけサイズを140(14pt)に、それ以外(Debian)は120(12pt)にするなど
   ;;   OSごとのサイズ微調整もここで一括管理できます
   (if (eq 'ns window-system)
       ;; Mac環境の時だけデフォルトのフォントサイズを大きくする (140 = 14pt相当)
       ;; 文字がまだ小さい場合は 150 や 160 に増やしてみてください
       (set-face-attribute 'default nil :height 140)         ;;  Macの場合
-      (set-face-attribute 'default nil :height 120)))       ;;  Mac意外(Debianのこと)の場合
+      (set-face-attribute 'default nil :height 120)))       ;;  Mac以外(Debianのこと)の場合
 
 ;; --- UI 設定 (Mac) ---
 (leaf ns
@@ -362,9 +363,13 @@
   :ensure t
   :defun flycheck-add-next-checker
   :global-minor-mode global-flycheck-mode
+  :custom
+  ;; Org-mode では Flycheck を動かさない（表示高速化）
+  (flycheck-global-modes . '(not org-mode))
   :config
   (with-eval-after-load 'flycheck
-    (flycheck-add-next-checker 'haskell-ghc 'haskell-hlint)))
+    (when (executable-find "hlint")
+      (flycheck-add-next-checker 'haskell-ghc 'haskell-hlint))))
 
 ;; --- Tree-sitter (構文解析・高度なハイライト) ---
 (leaf treesit
@@ -378,8 +383,8 @@
   :ensure t
   :global-minor-mode global-treesit-auto-mode
   :custom
-  ;; 文法ファイルが未インストールの場合は自動でダウンロードする (確認を出したい場合は 'prompt に変更)
-  (treesit-auto-install . t)
+  ;; t にするとOrgのコードブロック表示時に裏でビルドが走り固まるため 'prompt にする
+  (treesit-auto-install . 'prompt)
   :config
   ;; 対応しているすべての言語で自動的に ts-mode を有効化する
   (treesit-auto-add-to-auto-mode-alist 'all))
@@ -387,6 +392,18 @@
 ;; --- LSP コアクライアント ---
 (leaf lsp-mode
   :ensure t
+  :preface
+  ;; Org等のコードブロック色付け用一時バッファ（ファイル実体なし）ではLSPや保存時Hookを起動しない関数
+  (defun c/lsp-deferred-if-file ()
+    "Start `lsp-deferred' only when the buffer is visiting a real file."
+    (when buffer-file-name
+      (lsp-deferred)))
+
+  (defun c/setup-lsp-save-hooks ()
+    "Setup format and organize-imports on save only for real file buffers."
+    (when buffer-file-name
+      (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-format-buffer) (lsp-format-buffer))) nil t)
+      (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-organize-imports) (lsp-organize-imports))) nil t)))
   :custom ((lsp-keep-workspace-alive . nil)
            (lsp-signature-auto-activate . t)
            (lsp-keymap-prefix . "C-c l")
@@ -396,18 +413,10 @@
   :bind ((lsp-mode-map
           ("C-c r" . lsp-rename)
           ("C-c a" . lsp-execute-code-action)))
-  :hook (;; Python 用の安全な保存時自動フック（従来の python-mode）
-         (python-mode-hook . (lambda ()
-                               (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-format-buffer) (lsp-format-buffer))) nil t)
-                               (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-organize-imports) (lsp-organize-imports))) nil t)))
-         ;; Python 用の安全な保存時自動フック（Tree-sitter 版の python-ts-mode）
-         (python-ts-mode-hook . (lambda ()
-                                  (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-format-buffer) (lsp-format-buffer))) nil t)
-                                  (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-organize-imports) (lsp-organize-imports))) nil t)))
-         ;; Haskell 用の安全な保存時自動フック
-         (haskell-mode-hook . (lambda ()
-                                (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-format-buffer) (lsp-format-buffer))) nil t)
-                                (add-hook 'before-save-hook (lambda () (when (fboundp 'lsp-organize-imports) (lsp-organize-imports))) nil t)))))
+  :hook (;; Python / Haskell 用の安全な保存時自動フック（実ファイルのみ対象）
+         (python-mode-hook . c/setup-lsp-save-hooks)
+         (python-ts-mode-hook . c/setup-lsp-save-hooks)
+         (haskell-mode-hook . c/setup-lsp-save-hooks)))
 
 (leaf lsp-ui
   :ensure t
@@ -424,17 +433,26 @@
 (leaf flycheck-haskell
   :doc "Improved Haskell support for Flycheck"
   :ensure t
+  ;; OSに ghc / cabal / stack がある環境でのみ有効化
+  :when (or (executable-find "ghc") (executable-find "cabal") (executable-find "stack"))
   :after (flycheck haskell-mode)
-  :hook (haskell-mode-hook . flycheck-haskell-setup))
+  :hook (haskell-mode-hook . (lambda ()
+                               ;; Orgの色付け用一時バッファでは実行しない
+                               (when buffer-file-name
+                                 (flycheck-haskell-setup)))))
 
 (leaf lsp-haskell
   :ensure t
+  ;; OSに HLS がある環境でのみ有効化
+  :when (or (executable-find "haskell-language-server-wrapper")
+            (executable-find "haskell-language-server"))
   :after haskell-mode lsp-mode
-  :hook (haskell-mode-hook . lsp-deferred))
+  :hook (haskell-mode-hook . c/lsp-deferred-if-file))
 
 ;; --- Python 開発環境 ---
 (leaf pyvenv
   :ensure t
+  :when (executable-find "python3")
   :config
   (add-hook 'pyvenv-post-activate-hook #'lsp-restart-workspace))
 
@@ -443,23 +461,29 @@
   :tag "builtin" "languages"
   :custom ((python-indent-offset . 4)))
 
-;; lsp-pyright や lsp-ruff も ts-mode で起動させる
+;; lsp-pyright や lsp-ruff も ts-mode かつ実ファイルのみで起動させる
 (leaf lsp-pyright
   :ensure t
+  :when (or (executable-find "pyright") (executable-find "python3"))
   :after lsp-mode
   :custom ((lsp-pyright-multi-root . t))
-  :hook ((python-mode-hook python-ts-mode-hook) . lsp-deferred))
+  :hook ((python-mode-hook python-ts-mode-hook) . c/lsp-deferred-if-file))
 
 (leaf lsp-ruff
+  :when (or (executable-find "ruff") (executable-find "python3"))
   :after lsp-mode
-  :require lsp-ruff
-  :hook ((python-mode-hook python-ts-mode-hook) . lsp-deferred))
+  :hook ((python-mode-hook python-ts-mode-hook) .
+         (lambda ()
+           (when buffer-file-name
+             (require 'lsp-ruff nil t)
+             (lsp-deferred)))))
 
 (leaf cape-python
   :after cape
   :hook ((python-mode-hook python-ts-mode-hook) .
          (lambda ()
-           (add-hook 'completion-at-point-functions #'cape-dabbrev nil t))))
+           (when buffer-file-name
+             (add-hook 'completion-at-point-functions #'cape-dabbrev nil t)))))
 
 ;; --- データベース (MariaDB) ---
 (leaf sql
@@ -503,7 +527,7 @@
 ;;   さらに m を押す -> 「To file」が選択され、エクスポートが実行されます。
 (leaf org
   :doc "Outline-based notes management and organizer"
-  :require ox-md                  ; Markdownへのエクスポート機能を有効化
+  ;; :require ox-md をトップレベルに書くとEmacs起動時にOrg全体が読み込まれるため :config 内に配置
   :custom
   ((org-startup-indented . t)     ; 見出しの深さに合わせてテキストを字下げして綺麗に表示
    (org-hide-leading-stars . t)   ; 階層の星(*)をすっきり見せる（一番右の星だけ表示）
@@ -511,14 +535,16 @@
   :hook
   (org-mode-hook . visual-line-mode) ; Markdown と同じく、ウィンドウ端で綺麗に折り返す
   :config
+  (require 'ox-md nil t)          ; Markdownへのエクスポート機能を有効化
   ;; 日付タイムスタンプ (C-c .) の曜日表記を OS 問わず日本語 (月, 火...) に統一する
   (setq system-time-locale "ja_JP.UTF-8"))
 
-;; --- Org-modeでテーブルのピクセル単位のズレを完璧に補正 ---
+;; --- テーブルのピクセル単位補正 (手動呼び出し用) ---
 (leaf valign
   :doc "Pixel-perfect visual alignment for Org and Markdown tables"
   :ensure t
-  :hook ((org-mode-hook markdown-mode-hook) . valign-mode))
+  ;; Macでの表示遅延を防ぐため自動Hookは外し、必要な時だけ M-x valign-mode で呼ぶ
+  :commands (valign-mode))
 
 ;; --- 集中執筆モード (ブログ特化) ---
 (leaf olivetti
