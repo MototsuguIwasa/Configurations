@@ -81,19 +81,17 @@
   ;;
   :when (display-graphic-p)
   :config
-  ;; デフォルト（英数字）のフォントを指定
+  ;; 1. default だけでなく fixed-pitch (doom-themesがOrgの表で使うフェイス) にも明示的に指定する
   (set-face-attribute 'default nil :family "PlemolJP Console NF")
+  (set-face-attribute 'fixed-pitch nil :family "PlemolJP Console NF")
 
-  ;; 日本語（全角文字・漢字・記号）にも確実に PlemolJP を適用する（Macでのフォールバック遅延＆ズレ防止）
-  (dolist (charset '(japanese-jisx0208 japanese-jisx0213.2004-1 katakana-jisx0201 han cjk-misc))
+  ;; 2. 日本語・漢字・記号(symbol)すべてに PlemolJP を適用して別フォントの混入を防ぐ
+  (dolist (charset '(japanese-jisx0208 japanese-jisx0213.2004-1 katakana-jisx0201 han cjk-misc symbol))
     (set-fontset-font t charset (font-spec :family "PlemolJP Console NF")))
 
-  ;; OSごとのサイズ微調整
-  ;;   Macの時だけサイズを140(14pt)に、それ以外(Debian)は120(12pt)にするなど
-  ;;   OSごとのサイズ微調整もここで一括管理できます
+  ;; 3. OSごとのサイズ調整
+  ;; ※ Debianで :height 120 で微妙にズレる場合は、偶数ピクセルになりやすい 130 や 105、150 等を試してください
   (if (eq 'ns window-system)
-      ;; Mac環境の時だけデフォルトのフォントサイズを大きくする (140 = 14pt相当)
-      ;; 文字がまだ小さい場合は 150 や 160 に増やしてみてください
       (set-face-attribute 'default nil :height 140)         ;;  Macの場合
       (set-face-attribute 'default nil :height 120)))       ;;  Mac以外(Debianのこと)の場合
 
@@ -539,12 +537,16 @@
   ;; 日付タイムスタンプ (C-c .) の曜日表記を OS 問わず日本語 (月, 火...) に統一する
   (setq system-time-locale "ja_JP.UTF-8"))
 
-;; --- テーブルのピクセル単位補正 (手動呼び出し用) ---
+;; --- テーブルのピクセル単位補正 ---
 (leaf valign
   :doc "Pixel-perfect visual alignment for Org and Markdown tables"
   :ensure t
-  ;; Macでの表示遅延を防ぐため自動Hookは外し、必要な時だけ M-x valign-mode で呼ぶ
-  :commands (valign-mode))
+  :commands (valign-mode)
+  :init
+  ;; Mac(darwin)以外の環境(Debian)でのみ、OrgとMarkdownで自動的に valign-mode を有効化する
+  (unless (eq system-type 'darwin)
+    (add-hook 'org-mode-hook #'valign-mode)
+    (add-hook 'markdown-mode-hook #'valign-mode)))
 
 ;; --- 集中執筆モード (ブログ特化) ---
 (leaf olivetti
