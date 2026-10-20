@@ -16,6 +16,11 @@
 ;;
 ;; ■ Haskell 開発環境の準備
 ;; ※ ghcup 等で ghc / haskell-language-server (HLS) / hlint の導入が必要です
+;; 
+;; ■ Org-modeで作成する文書を保管するフォルダーを用意する。
+;;    (github から Org-mode を clone する親フォルダを準備)
+;;   [MacOS]   ~/Documents/works/
+;;   [Debian]  ~/works
 ;;
 ;; =====================================================================
 ;; 1. 起動・パッケージ管理の初期化 (最優先)
@@ -525,18 +530,37 @@
 ;;   さらに m を押す -> 「To file」が選択され、エクスポートが実行されます。
 (leaf org
   :doc "Outline-based notes management and organizer"
-  ;; :require ox-md をトップレベルに書くとEmacs起動時にOrg全体が読み込まれるため :config 内に配置
+  :require ox-md                  ; Markdownへのエクスポート機能を有効化
+  :bind (("C-c c" . org-capture)  ; どこからでも一発でメモ・日記を起動
+         ("C-c a" . org-agenda))  ; スケジュール・TODO一覧を起動
   :custom
   ((org-startup-indented . t)     ; 見出しの深さに合わせてテキストを字下げして綺麗に表示
    (org-hide-leading-stars . t)   ; 階層の星(*)をすっきり見せる（一番右の星だけ表示）
    (org-log-done . 'time))        ; DONE に切り替えた瞬間に、完了したタイムスタンプを自動記録
   :hook
-  (org-mode-hook . visual-line-mode) ; Markdown と同じく、ウィンドウ端で綺麗に折り返す
+  (org-mode-hook . visual-line-mode)
   :config
-  (require 'ox-md nil t)          ; Markdownへのエクスポート機能を有効化
   ;; 日付タイムスタンプ (C-c .) の曜日表記を OS 問わず日本語 (月, 火...) に統一する
-  (setq system-time-locale "ja_JP.UTF-8"))
+  (setq system-time-locale "ja_JP.UTF-8")
 
+  ;; 1. OSごとにGitHubリポジトリ（Orgフォルダ）のパスを切り替える
+  (setq org-directory
+        (if (eq system-type 'darwin)
+            "~/Documents/works/Org-mode/"   ; ← 【Mac側】の実際のフォルダパスに変更
+            "~/works/Org-mode/"))           ; ← 【Debian側】の実際のフォルダパスに変更
+
+  ;; 2. org-directory を基準にファイルパスを自動生成（ここは書き換え不要）
+  (setq org-default-notes-file (expand-file-name "diary.org" org-directory))
+  (setq org-agenda-files (list org-directory))
+
+  ;; 3. Org-capture のテンプレート（ファイル名だけ書けば自動で org-directory 内を参照します）
+  (setq org-capture-templates
+        '(("d" "日記 (Diary)" entry
+           (file+olp+datetree "diary.org")
+           "* %?\n  %U\n" :empty-lines 1)
+          ("t" "タスク (TODO)" entry
+           (file+headline "diary.org" "Tasks")
+           "* TODO %?\n  SCHEDULED: %t\n"))))
 
 ;; --- テーブルのピクセル単位補正 (Debianのみ自動 / Macは手動) ---
 (leaf valign
