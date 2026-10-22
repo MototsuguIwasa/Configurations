@@ -51,8 +51,7 @@
   :doc "Get environment variables such as $PATH from the shell"
   :ensure t
   :defun (exec-path-from-shell-initialize)
-  :custom ((exec-path-from-shell-check-startup-files . t)
-           (exec-path-from-shell-variables . '("PATH" "GOPATH" "JAVA_HOME")))
+  :custom ((exec-path-from-shell-variables . '("PATH" "GOPATH" "JAVA_HOME")))
   :config
   (exec-path-from-shell-initialize))
 
@@ -84,21 +83,26 @@
   ;;   # 解凍したPlemolJPのフォルダがあるディレクトリに移動して実行します
   ;;   cp -r *.ttf ~/Library/Fonts/
   ;;
-  :when (display-graphic-p)
+  :when (and (display-graphic-p)
+             (find-font (font-spec :name "PlemolJP Console NF")))
   :config
-  ;; 1. default だけでなく fixed-pitch (doom-themesがOrgの表で使うフェイス) にも明示的に指定する
-  (set-face-attribute 'default nil :family "PlemolJP Console NF")
-  (set-face-attribute 'fixed-pitch nil :family "PlemolJP Console NF")
+  ;; 1. default（サイズ含む）と fixed-pitch を1回ずつで無駄なく設定
+  (set-face-attribute 'default nil
+                      :family "PlemolJP Console NF"
+                      :height (if (eq system-type 'darwin) 140 120))
+  (set-face-attribute 'fixed-pitch nil
+                      :family "PlemolJP Console NF")
 
-  ;; 2. 日本語・漢字・記号(symbol)すべてに PlemolJP を適用して別フォントの混入を防ぐ
-  (dolist (charset '(japanese-jisx0208 japanese-jisx0213.2004-1 katakana-jisx0201 han cjk-misc symbol))
+  ;; 2. 日本語・漢字すべてに PlemolJP を適用して別フォントの混入を防ぐ
+  (dolist (charset '(japanese-jisx0208 japanese-jisx0213.2004-1 katakana-jisx0201 han cjk-misc))
     (set-fontset-font t charset (font-spec :family "PlemolJP Console NF")))
 
-  ;; 3. OSごとのサイズ調整
-  ;; ※ Debianで :height 120 で微妙にズレる場合は、偶数ピクセルになりやすい 130 や 105、150 等を試してください
-  (if (eq 'ns window-system)
-      (set-face-attribute 'default nil :height 140)         ;;  Macの場合
-      (set-face-attribute 'default nil :height 120)))       ;;  Mac以外(Debianのこと)の場合
+  ;; 3. アイコン領域は Symbols Nerd Font Mono があれば優先し、なければ PlemolJP を使う
+  (set-fontset-font t 'symbol
+                    (font-spec :family (if (find-font (font-spec :name "Symbols Nerd Font Mono"))
+                                           "Symbols Nerd Font Mono"
+                                           "PlemolJP Console NF"))
+                    nil 'prepend))
 
 ;; --- UI 設定 (Mac) ---
 (leaf ns
@@ -288,7 +292,6 @@
          ([remap project-switch-to-buffer] . consult-project-buffer)
          ([remap goto-line] . consult-goto-line)
          ([remap imenu] . consult-imenu)
-         ("M-g f" . consult-flymake)
          ("C-s" . c/consult-line)
          ("C-M-s" . nil)
          ("C-M-s s" . isearch-forward)
@@ -297,6 +300,11 @@
          (minibuffer-local-map
           :package emacs
           ("C-r" . consult-history))))
+
+(leaf consult-flycheck
+  :ensure t
+  :after (consult flycheck)
+  :bind (("M-g f" . consult-flycheck)))
 
 (leaf affe
   :doc "Asynchronous Fuzzy Finder for Emacs"
@@ -414,8 +422,8 @@
            (lsp-completion-provider . :capf)
            (lsp-before-save-hook . nil))
   :bind ((lsp-mode-map
-          ("C-c r" . lsp-rename)
-          ("C-c a" . lsp-execute-code-action)))
+          ("C-c r"   . lsp-rename)
+          ("C-c C-a" . lsp-execute-code-action))) ; C-c a (org-agenda) との競合を回避
   :hook (;; Python / Haskell 用の安全な保存時自動フック（実ファイルのみ対象）
          (python-mode-hook . c/setup-lsp-save-hooks)
          (python-ts-mode-hook . c/setup-lsp-save-hooks)
@@ -499,9 +507,7 @@
                              (sql-password "root")
                              (sql-server "localhost")
                              (sql-port 3306))))
-  (sql-connection-candidate . 'my-mariadb)
-  :config
-  (add-to-list 'auto-mode-alist '("\\.sql\\'" . sql-mode)))
+  (sql-connection-candidate . 'my-mariadb))
 
 ;; --- ドキュメント (Markdown) ---
 (leaf markdown-mode
@@ -510,9 +516,7 @@
          ("\\.markdown\\'" . gfm-mode))
   :hook (markdown-mode-hook . visual-line-mode)
   :bind ((markdown-mode-map
-          ("C-c t" . markdown-toggle-markup-hiding)
-          ;; 目次(TOC)の自動生成・更新
-          ("C-c C-t" . markdown-toc-generate-or-refresh)))
+          ("C-c t" . markdown-toggle-markup-hiding)))
   :custom ((markdown-hide-markup . nil)
            (markdown-fontify-code-blocks-natively . t)
            ;; Debian/Mac環境でのプレビュー用 (※事前に pandoc のインストールが必要です)
@@ -520,7 +524,9 @@
 
 (leaf markdown-toc
   :ensure t
-  :after markdown-mode)
+  :after markdown-mode
+  :bind ((markdown-mode-map
+          ("C-c C-t" . markdown-toc-generate-or-refresh))))
 
 ;; --- Org-mode (シンプルなメモ・タスク管理) ---
 ;; Markdown 形式で保存する操作手順
