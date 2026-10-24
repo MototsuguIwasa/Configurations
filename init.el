@@ -7,7 +7,7 @@
 ;; ■ 事前準備（OS側のパッケージ導入）
 ;; [Debian] sudo apt update && sudo apt install ripgrep pandoc git build-essential
 ;; [macOS]  brew install ripgrep pandoc coreutils
-;;          (補足) coreutils は Diredコマンドの中で利用する (Macでの表示崩れを防止するために導入)
+;;          (補足) coreutils は Dired コマンドの中で利用する (macOS での表示崩れを防止するために導入)
 ;;
 ;; ■ Python 開発環境の準備
 ;; ※ 対象の仮想環境内（または pipx 等）で `pip install pyright ruff` が必要です
@@ -17,10 +17,10 @@
 ;; ■ Haskell 開発環境の準備
 ;; ※ ghcup 等で ghc / haskell-language-server (HLS) / hlint の導入が必要です
 ;; 
-;; ■ Org-modeで作成する文書を保管するフォルダーを用意する。
-;;    (github から Org-mode を clone する親フォルダを準備)
-;;   [MacOS]   ~/Documents/works/
-;;   [Debian]  ~/works
+;; ■ Org-mode で作成する文書を保管するフォルダを用意する
+;;    (GitHub から Org-mode を clone する親フォルダを準備)
+;;   [Debian] ~/works
+;;   [macOS]  ~/Documents/works/
 ;;
 ;; =====================================================================
 ;; 1. 起動・パッケージ管理の初期化 (最優先)
@@ -58,35 +58,37 @@
 ;; =====================================================================
 ;; 2. Emacsの見た目・UI・テーマ設定 (起動直後に適用)
 ;; =====================================================================
-;; --- フォント設定 (Mac / Debian 共通) ---
+;; --- フォント設定 (Debian / macOS 共通) ---
 (leaf font-settings
   :doc "Set default font for avoiding Org-mode table misalignment"
   ;; OSにインストールしたフォント名を指定します
   ;; (HackGen の場合は "HackGen" などに書き換えてください)
-  ;; Org-modeの表で罫線が揃うように等幅フォントである「PlemolJP」を導入する。
-  ;; 1．GitHubのPlemolJPリリースページ（https://github.com/yuru7/PlemolJP/releases）にアクセスする。
-  ;; 2. Assets」の中から、最新版のzipファイル（例：PlemolJP_vX.X.X.zip）をダウンロードして解凍します。
+  ;; Org-mode の表で罫線が揃うように等幅フォントである「PlemolJP」を導入する。
+  ;; 1. GitHub の PlemolJP リリースページ（https://github.com/yuru7/PlemolJP/releases）にアクセスする。
+  ;; 2. 「Assets」の中から、最新版の zip ファイル（例：PlemolJP_vX.X.X.zip）をダウンロードして解凍します。
   ;;    (※ Nerd Fonts（アイコン付き）を使いたい場合は PlemolJP_NF_vX.X.X.zip を選んでください)
   ;; 3. ダウンロードしたファイルを解凍する。
-  ;;    解凍では、２つのフォルダが作成れる (PlemoUP35Console_NF と PlemoUPConsole_NF)
-  ;;    ***35*** となっている方は、半角3 全角5の比率で作成されているので「35」という数字がついていない方を使うこと
+  ;;    解凍では、2つのフォルダが作成される (PlemolJP35Console_NF と PlemolJPConsole_NF)
+  ;;    ***35*** となっている方は、半角3:全角5の比率で作成されているので「35」という数字がついていない方を使うこと
   ;;
-  ;; 4. 1 システムへの取り込み(Devianの場合)
-  ;;    # フォント用のディレクトリが存在しない場合は作成
-  ;;    mkdir -p ~/.local/share/fonts/
-  ;;    # 解凍したフォルダの中にある .ttf ファイルをすべてコピー
-  ;;    cp -r PlemolJP*/*.ttf ~/.local/share/fonts/
-  ;;    # フォントキャッシュを更新してOSに認識させる
-  ;;    fc-cache -f -v
+  ;; 4. システムへの取り込み
+  ;; [Debian]
+  ;;   # フォント用のディレクトリが存在しない場合は作成
+  ;;   mkdir -p ~/.local/share/fonts/
+  ;;   # 解凍したフォルダの中にある .ttf ファイルをすべてコピー
+  ;;   cp -r PlemolJPConsole_NF/*.ttf ~/.local/share/fonts/
+  ;;   # フォントキャッシュを更新してOSに認識させる
+  ;;   fc-cache -f -v
   ;;
-  ;; 4. 2 システムへの取り込み(Macの場合)
-  ;;   # 解凍したPlemolJPのフォルダがあるディレクトリに移動して実行します
-  ;;   cp -r *.ttf ~/Library/Fonts/
+  ;; [macOS]
+  ;;   # 解凍した PlemolJP のフォルダがあるディレクトリに移動して実行します
+  ;;   cp -r PlemolJPConsole_NF/*.ttf ~/Library/Fonts/
   ;;
   :when (and (display-graphic-p)
              (find-font (font-spec :name "PlemolJP Console NF")))
   :config
   ;; 1. default（サイズ含む）と fixed-pitch を1回ずつで無駄なく設定
+  ;;    macOS は 140 (14pt)、それ以外 (Debian) は 120 (12pt) に設定
   (set-face-attribute 'default nil
                       :family "PlemolJP Console NF"
                       :height (if (eq system-type 'darwin) 140 120))
@@ -101,13 +103,13 @@
   (set-fontset-font t 'symbol
                     (font-spec :family (if (find-font (font-spec :name "Symbols Nerd Font Mono"))
                                            "Symbols Nerd Font Mono"
-                                           "PlemolJP Console NF"))
+                                         "PlemolJP Console NF"))
                     nil 'prepend))
 
-;; --- UI 設定 (Mac) ---
+;; --- UI 設定 (macOS) ---
 (leaf ns
   :doc "next/open/gnustep / macos communication module"
-  :when (eq 'ns window-system)
+  :when (eq window-system 'ns)
   :custom ((ns-control-modifier . 'control)
            (ns-option-modifier . 'super)
            (ns-command-modifier . 'meta)
@@ -118,19 +120,19 @@
                                     (ns-transparent-titlebar . t)))))
 
 (leaf nerd-icons
-  ;; 初回起動時、Emacs上で M-x nerd-icons-install-fonts を実行すると
+  ;; 初回起動時、Emacs 上で M-x nerd-icons-install-fonts を実行すると
   ;; 必要なフォント (SymbolsNerdFontMono-Regular.ttf) が自動インストールされます。
   ;;
   ;; ※ 手動で導入する場合:
-  ;; [OS: Debian]
-  ;; mkdir -p ~/.local/share/fonts && cd ~/.local/share/fonts
-  ;; curl -fLo "SymbolsNerdFontMono-Regular.ttf" https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf
-  ;; fc-cache -f -v
+  ;; [Debian]
+  ;;   mkdir -p ~/.local/share/fonts && cd ~/.local/share/fonts
+  ;;   curl -fLo "SymbolsNerdFontMono-Regular.ttf" https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf
+  ;;   fc-cache -f -v
   ;;
-  ;; [OS: macOS]
-  ;; mkdir -p ~/Library/Fonts && cd ~/Library/Fonts
-  ;; curl -fLo "SymbolsNerdFontMono-Regular.ttf" https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf
-  ;; (導入後に反映されない場合は Mac の再起動を試す)
+  ;; [macOS]
+  ;;   mkdir -p ~/Library/Fonts && cd ~/Library/Fonts
+  ;;   curl -fLo "SymbolsNerdFontMono-Regular.ttf" https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf
+  ;;   (導入後に反映されない場合は macOS の再起動を試す)
   :ensure t)
 
 (leaf doom-themes
@@ -185,7 +187,7 @@
             (tool-bar-mode . nil)
             (scroll-bar-mode . nil)
             (indent-tabs-mode . nil)
-            ;; Emacs 28+ 標準の y/n 短縮回答設定 (Macのnative-compエラー回避)
+            ;; Emacs 28+ 標準の y/n 短縮回答設定 (macOS の native-comp エラー回避)
             (use-short-answers . t))
   :config
   (keyboard-translate ?\C-h ?\C-?))
@@ -238,10 +240,10 @@
   :doc "Directory editor"
   :tag "builtin"
   :custom
-  ;; diredでフォルダを先頭にまとめ、見やすくする
+  ;; dired でフォルダを先頭にまとめ、見やすくする
   (dired-listing-switches . "-alFh --group-directories-first")
   :config
-  ;; Mac の場合のみ、日本語の列幅計算が正確な GNU ls (gls) を使う
+  ;; [macOS] 日本語の列幅計算が正確な GNU ls (gls) を使う
   (when (eq system-type 'darwin)
     (let ((gls (executable-find "gls")))
       (when gls
@@ -519,7 +521,7 @@
           ("C-c t" . markdown-toggle-markup-hiding)))
   :custom ((markdown-hide-markup . nil)
            (markdown-fontify-code-blocks-natively . t)
-           ;; Debian/Mac環境でのプレビュー用 (※事前に pandoc のインストールが必要です)
+           ;; Debian / macOS 環境でのプレビュー用 (※事前に pandoc のインストールが必要です)
            (markdown-command . "pandoc -f gfm -t html5 -s")))
 
 (leaf markdown-toc
@@ -552,8 +554,8 @@
   ;; 1. OSごとにGitHubリポジトリ（Orgフォルダ）のパスを切り替える
   (setq org-directory
         (if (eq system-type 'darwin)
-            "~/Documents/works/Org-mode/"   ; ← 【Mac側】の実際のフォルダパスに変更
-            "~/works/Org-mode/"))           ; ← 【Debian側】の実際のフォルダパスに変更
+            "~/Documents/works/Org-mode/"   ; [macOS]  実際のフォルダパスに変更
+            "~/works/Org-mode/"))           ; [Debian] 実際のフォルダパスに変更
 
   ;; 2. org-directory を基準にファイルパスを自動生成（ここは書き換え不要）
   (setq org-default-notes-file (expand-file-name "diary.org" org-directory))
@@ -568,7 +570,7 @@
            (file+headline "diary.org" "Tasks")
            "* TODO %?\n  SCHEDULED: %t\n"))))
 
-;; --- テーブルのピクセル単位補正 (Debianのみ自動 / Macは手動) ---
+;; --- テーブルのピクセル単位補正 (Debian のみ自動 / macOS は手動) ---
 (leaf valign
   :doc "Pixel-perfect visual alignment for Org and Markdown tables"
   :ensure t
@@ -577,8 +579,8 @@
   ;; 縦の罫線(|)を隙間なく綺麗に繋げて表示する（お好みで nil にしてもOKです）
   (valign-fancy-bar . t)
   :init
-  ;; Mac(darwin)以外の環境(Debian)でのみ、OrgとMarkdownで自動的に valign-mode を有効化する
-  ;; Macでの表示遅延を防ぐため自動Hookは外し、必要な時だけ M-x valign-mode で呼ぶ
+  ;; [Debian] macOS (darwin) 以外の環境でのみ、Org と Markdown で自動的に valign-mode を有効化する
+  ;; [macOS]  表示遅延を防ぐため自動 Hook は外し、必要な時だけ M-x valign-mode で呼ぶ
   (unless (eq system-type 'darwin)
     (add-hook 'org-mode-hook #'valign-mode)
     (add-hook 'markdown-mode-hook #'valign-mode)))
